@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@theme {
+  --font-inter: 'Inter', sans-serif;
+}
+
+body {
+  @apply bg-orange-50 text-gray-800;
+  font-family: var(--font-inter);
+}
