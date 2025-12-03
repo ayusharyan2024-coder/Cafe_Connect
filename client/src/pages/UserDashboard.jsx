@@ -40,7 +40,8 @@ const UserDashboard = () => {
             // Map imageUrl to local images, or use the URL directly
             const menuWithImages = data.map(item => ({
                 ...item,
-                image: imageMap[item.imageUrl] || item.imageUrl || burger,
+                id: item._id || item.id, // Handle MongoDB _id
+                image: imageMap[item.image] || item.image || burger, // Handle image field name change from previous schema
             }));
             setMenuItems(menuWithImages);
         } catch (error) {

@@ -36,7 +36,12 @@ const AdminDashboard = () => {
         setLoading(true);
         try {
             const data = await api.getAllOrders(token);
-            setOrders(data);
+            // Map _id to id
+            const ordersWithIds = data.map(order => ({
+                ...order,
+                id: order._id || order.id
+            }));
+            setOrders(ordersWithIds);
         } catch (error) {
             console.error('Error fetching orders:', error);
         } finally {
@@ -48,7 +53,12 @@ const AdminDashboard = () => {
         setLoading(true);
         try {
             const data = await api.getMenu(true); // true = include unavailable
-            setMenuItems(data);
+            // Map _id to id for frontend compatibility
+            const menuWithIds = data.map(item => ({
+                ...item,
+                id: item._id || item.id
+            }));
+            setMenuItems(menuWithIds);
         } catch (error) {
             console.error('Error fetching menu:', error);
         } finally {

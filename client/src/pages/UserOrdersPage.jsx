@@ -55,7 +55,12 @@ const UserOrdersPage = () => {
     const fetchOrders = async () => {
         try {
             const data = await api.getUserOrders(user.id);
-            setOrders(data);
+            // Map _id to id
+            const ordersWithIds = data.map(order => ({
+                ...order,
+                id: order._id || order.id
+            }));
+            setOrders(ordersWithIds);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching orders:', error);
