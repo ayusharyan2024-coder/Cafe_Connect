@@ -1,27 +1,48 @@
 // Use environment variable if available, otherwise fallback to localhost
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
+// Helper to add timeout to fetch requests
+const fetchWithTimeout = async (url, options = {}, timeout = 30000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(id);
+        return response;
+    } catch (error) {
+        clearTimeout(id);
+        if (error.name === 'AbortError') {
+            throw new Error('Request timeout - please try again');
+        }
+        throw error;
+    }
+};
+
 const api = {
     // Auth endpoints
     signup: async (userData) => {
-        const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+        const response = await fetchWithTimeout(`${API_BASE_URL}/auth/signup`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(userData),
-        });
+        }, 30000);
         return response.json();
     },
 
     login: async (credentials) => {
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(credentials),
-        });
+        }, 30000);
         return response.json();
     },
 
@@ -30,7 +51,7 @@ const api = {
         const url = includeUnavailable
             ? `${API_BASE_URL}/menu?includeUnavailable=true`
             : `${API_BASE_URL}/menu`;
-        const response = await fetch(url);
+        const response = await fetchWithTimeout(url, {}, 30000);
         return response.json();
     },
 
