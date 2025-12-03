@@ -1,4 +1,4 @@
-const { Order, OrderItem, Menu, User } = require('../models');
+const mockData = require('../mockData');
 
 const orderController = {
     placeOrder: async (req, res) => {
@@ -10,7 +10,7 @@ const orderController = {
             const orderItems = [];
 
             for (const item of items) {
-                const menuItem = await Menu.findByPk(item.menuId);
+                const menuItem = mockData.menuItems.find(m => m.id === item.menuId);
                 if (!menuItem || !menuItem.available) {
                     return res.status(400).json({ message: `Item ${item.menuId} not available` });
                 }
@@ -22,23 +22,23 @@ const orderController = {
                     menuId: item.menuId,
                     quantity: item.quantity,
                     price: menuItem.price,
+                    Menu: menuItem // Include menu details for response
                 });
             }
 
             // Create order
-            const order = await Order.create({
+            const order = {
+                id: mockData.getNextOrderId(),
                 userId,
                 totalAmount,
                 status: 'Pending',
-            });
+                estimatedWaitTime: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                OrderItems: orderItems
+            };
 
-            // Create order items
-            for (const item of orderItems) {
-                await OrderItem.create({
-                    orderId: order.id,
-                    ...item,
-                });
-            }
+            mockData.orders.push(order);
 
             res.status(201).json({
                 message: 'Order placed successfully',
@@ -54,16 +54,9 @@ const orderController = {
         try {
             const { userId } = req.params;
 
-            const orders = await Order.findAll({
-                where: { userId },
-                include: [
-                    {
-                        model: OrderItem,
-                        include: [Menu],
-                    },
-                ],
-                order: [['createdAt', 'DESC']],
-            });
+            const orders = mockData.orders
+                .filter(order => order.userId === parseInt(userId))
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
             res.json(orders);
         } catch (error) {
@@ -74,21 +67,19 @@ const orderController = {
 
     getAllOrders: async (req, res) => {
         try {
-            const orders = await Order.findAll({
-                include: [
-                    {
-                        model: OrderItem,
-                        include: [Menu],
-                    },
-                    {
-                        model: User,
-                        attributes: ['id', 'name', 'email'],
-                    },
-                ],
-                order: [['createdAt', 'DESC']],
-            });
+            const ordersWithUsers = mockData.orders.map(order => {
+                const user = mockData.users.find(u => u.id === order.userId);
+                return {
+                    ...order,
+                    User: user ? {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email
+                    } : null
+                };
+            }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-            res.json(orders);
+            res.json(ordersWithUsers);
         } catch (error) {
             console.error('Get all orders error:', error);
             res.status(500).json({ message: 'Server error', error: error.message });
@@ -100,7 +91,7 @@ const orderController = {
             const { id } = req.params;
             const { status, estimatedTime } = req.body;
 
-            const order = await Order.findByPk(id);
+            const order = mockData.orders.find(o => o.id === parseInt(id));
 
             if (!order) {
                 return res.status(404).json({ error: 'Order not found' });
@@ -116,7 +107,7 @@ const orderController = {
                 order.estimatedWaitTime = estimatedTime;
             }
 
-            await order.save();
+            order.updatedAt = new Date();
 
             res.json({
                 message: 'Order updated successfully',

@@ -1,8 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const sequelize = require('./config/database');
-const models = require('./models');
 
 dotenv.config();
 
@@ -23,18 +21,8 @@ app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', addItemsRoutes);
 
-// Seed initial data
-const { seedMenu } = require('./routes/seed');
-
-// Database sync and server start
-sequelize.sync()
-    .then(async () => {
-        console.log('Database synced successfully');
-        await seedMenu();
-        app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
-        });
-    })
-    .catch((err) => {
-        console.error('Unable to sync database:', err);
-    });
+// Start server immediately (no database sync needed)
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT} with MOCK DATA (no database)`);
+    console.log('Mock users: admin@cafe.com / admin123, user@test.com / user123');
+});

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const bcrypt = require('bcryptjs');
+const mockData = require('../mockData');
 
 const authController = {
     signup: async (req, res) => {
@@ -7,17 +8,27 @@ const authController = {
             const { name, email, password, role } = req.body;
 
             // Check if user already exists
-            const existingUser = await User.findOne({ where: { email } });
+            const existingUser = mockData.users.find(u => u.email === email);
             if (existingUser) {
                 return res.status(400).json({ message: 'User already exists' });
             }
 
             // Create new user
-            const user = await User.create({ name, email, password, role });
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const newUser = {
+                id: mockData.getNextUserId(),
+                name,
+                email,
+                password: hashedPassword,
+                role: role || 'user',
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+            mockData.users.push(newUser);
 
             // Generate JWT token
             const token = jwt.sign(
-                { id: user.id, email: user.email, role: user.role },
+                { id: newUser.id, email: newUser.email, role: newUser.role },
                 process.env.JWT_SECRET || 'your-secret-key',
                 { expiresIn: '7d' }
             );
@@ -26,10 +37,10 @@ const authController = {
                 message: 'User created successfully',
                 token,
                 user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
+                    id: newUser.id,
+                    name: newUser.name,
+                    email: newUser.email,
+                    role: newUser.role,
                 },
             });
         } catch (error) {
@@ -43,13 +54,13 @@ const authController = {
             const { email, password } = req.body;
 
             // Find user
-            const user = await User.findOne({ where: { email } });
+            const user = mockData.users.find(u => u.email === email);
             if (!user) {
                 return res.status(401).json({ message: 'Invalid credentials' });
             }
 
             // Check password
-            const isMatch = await user.comparePassword(password);
+            const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch) {
                 return res.status(401).json({ message: 'Invalid credentials' });
             }
