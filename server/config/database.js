@@ -16,8 +16,15 @@ const sequelize = new Sequelize({
         ssl: {
             require: true,
             rejectUnauthorized: false
-        }
-    } : {}
+        },
+        connectTimeout: 60000 // 60 seconds timeout
+    } : {},
+    pool: {
+        max: 5,
+        min: 0,
+        acquire: 60000, // 60 seconds to acquire connection
+        idle: 10000
+    }
 });
 
 module.exports = sequelize;

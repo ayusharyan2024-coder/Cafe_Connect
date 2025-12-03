@@ -1,4 +1,15 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+// Prefer explicit VITE_API_URL. When running in a browser (deployed), use a relative
+// `/api` path so the frontend talks to the same origin (useful for Vercel rewrites).
+// Fall back to localhost for local development when no window is available.
+let API_BASE_URL = import.meta.env.VITE_API_URL || '';
+if (!API_BASE_URL) {
+    if (typeof window !== 'undefined' && window.location) {
+        // Use a relative path so deployed frontend doesn't attempt to contact localhost
+        API_BASE_URL = `${window.location.origin}/api`;
+    } else {
+        API_BASE_URL = 'http://localhost:5001/api';
+    }
+}
 
 const api = {
     // Auth endpoints
