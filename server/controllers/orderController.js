@@ -1,16 +1,17 @@
-const mockData = require('../mockData');
+const Order = require('../models/Order');
+const Menu = require('../models/Menu');
 
 const orderController = {
     placeOrder: async (req, res) => {
         try {
             const { userId, items } = req.body; // items: [{ menuId, quantity }]
 
-            // Calculate total
+            // Calculate total and prepare order items
             let totalAmount = 0;
             const orderItems = [];
 
             for (const item of items) {
-                const menuItem = mockData.menuItems.find(m => m.id === item.menuId);
+                const menuItem = await Menu.findById(item.menuId);
                 if (!menuItem || !menuItem.available) {
                     return res.status(400).json({ message: `Item ${item.menuId} not available` });
                 }
@@ -19,26 +20,21 @@ const orderController = {
                 totalAmount += itemTotal;
 
                 orderItems.push({
-                    menuId: item.menuId,
-                    quantity: item.quantity,
+                    menuId: menuItem._id,
+                    name: menuItem.name,
                     price: menuItem.price,
-                    Menu: menuItem // Include menu details for response
+                    quantity: item.quantity
                 });
             }
 
             // Create order
-            const order = {
-                id: mockData.getNextOrderId(),
+            const order = new Order({
                 userId,
+                items: orderItems,
                 totalAmount,
-                status: 'Pending',
-                estimatedWaitTime: null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                OrderItems: orderItems
-            };
-
-            mockData.orders.push(order);
+                status: 'Pending'
+            });
+            await order.save();
 
             res.status(201).json({
                 message: 'Order placed successfully',
@@ -54,9 +50,9 @@ const orderController = {
         try {
             const { userId } = req.params;
 
-            const orders = mockData.orders
-                .filter(order => order.userId === parseInt(userId))
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            const orders = await Order.find({ userId })
+                .populate('items.menuId')
+                .sort({ createdAt: -1 });
 
             res.json(orders);
         } catch (error) {
@@ -67,19 +63,12 @@ const orderController = {
 
     getAllOrders: async (req, res) => {
         try {
-            const ordersWithUsers = mockData.orders.map(order => {
-                const user = mockData.users.find(u => u.id === order.userId);
-                return {
-                    ...order,
-                    User: user ? {
-                        id: user.id,
-                        name: user.name,
-                        email: user.email
-                    } : null
-                };
-            }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            const orders = await Order.find()
+                .populate('userId', 'name email')
+                .populate('items.menuId')
+                .sort({ createdAt: -1 });
 
-            res.json(ordersWithUsers);
+            res.json(orders);
         } catch (error) {
             console.error('Get all orders error:', error);
             res.status(500).json({ message: 'Server error', error: error.message });
@@ -91,23 +80,15 @@ const orderController = {
             const { id } = req.params;
             const { status, estimatedTime } = req.body;
 
-            const order = mockData.orders.find(o => o.id === parseInt(id));
+            const updateData = {};
+            if (status) updateData.status = status;
+            if (estimatedTime !== undefined) updateData.estimatedWaitTime = estimatedTime;
+
+            const order = await Order.findByIdAndUpdate(id, updateData, { new: true });
 
             if (!order) {
                 return res.status(404).json({ error: 'Order not found' });
             }
-
-            // Update status
-            if (status) {
-                order.status = status;
-            }
-
-            // Update estimated time if provided
-            if (estimatedTime !== undefined) {
-                order.estimatedWaitTime = estimatedTime;
-            }
-
-            order.updatedAt = new Date();
 
             res.json({
                 message: 'Order updated successfully',

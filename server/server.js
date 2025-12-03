@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const connectDB = require('./config/database');
 
 dotenv.config();
 
@@ -21,8 +22,13 @@ app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', addItemsRoutes);
 
-// Start server immediately (no database sync needed)
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT} with MOCK DATA (no database)`);
-    console.log('Mock users: admin@cafe.com / admin123, user@test.com / user123');
+// Connect to MongoDB and start server
+connectDB().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+        console.log('Connected to MongoDB');
+    });
+}).catch(err => {
+    console.error('Failed to connect to MongoDB:', err);
+    process.exit(1);
 });

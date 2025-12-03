@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const mockData = require('../mockData');
+const User = require('../models/User');
 
 const authController = {
     signup: async (req, res) => {
@@ -8,27 +7,23 @@ const authController = {
             const { name, email, password, role } = req.body;
 
             // Check if user already exists
-            const existingUser = mockData.users.find(u => u.email === email);
+            const existingUser = await User.findOne({ email });
             if (existingUser) {
                 return res.status(400).json({ message: 'User already exists' });
             }
 
             // Create new user
-            const hashedPassword = await bcrypt.hash(password, 10);
-            const newUser = {
-                id: mockData.getNextUserId(),
+            const user = new User({
                 name,
                 email,
-                password: hashedPassword,
-                role: role || 'user',
-                createdAt: new Date(),
-                updatedAt: new Date()
-            };
-            mockData.users.push(newUser);
+                password,
+                role: role || 'user'
+            });
+            await user.save();
 
             // Generate JWT token
             const token = jwt.sign(
-                { id: newUser.id, email: newUser.email, role: newUser.role },
+                { id: user._id, email: user.email, role: user.role },
                 process.env.JWT_SECRET || 'your-secret-key',
                 { expiresIn: '7d' }
             );
@@ -37,10 +32,10 @@ const authController = {
                 message: 'User created successfully',
                 token,
                 user: {
-                    id: newUser.id,
-                    name: newUser.name,
-                    email: newUser.email,
-                    role: newUser.role,
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
                 },
             });
         } catch (error) {
@@ -54,20 +49,20 @@ const authController = {
             const { email, password } = req.body;
 
             // Find user
-            const user = mockData.users.find(u => u.email === email);
+            const user = await User.findOne({ email });
             if (!user) {
                 return res.status(401).json({ message: 'Invalid credentials' });
             }
 
             // Check password
-            const isMatch = await bcrypt.compare(password, user.password);
+            const isMatch = await user.comparePassword(password);
             if (!isMatch) {
                 return res.status(401).json({ message: 'Invalid credentials' });
             }
 
             // Generate JWT token
             const token = jwt.sign(
-                { id: user.id, email: user.email, role: user.role },
+                { id: user._id, email: user.email, role: user.role },
                 process.env.JWT_SECRET || 'your-secret-key',
                 { expiresIn: '7d' }
             );
@@ -76,7 +71,7 @@ const authController = {
                 message: 'Login successful',
                 token,
                 user: {
-                    id: user.id,
+                    id: user._id,
                     name: user.name,
                     email: user.email,
                     role: user.role,

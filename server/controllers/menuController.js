@@ -1,23 +1,12 @@
-const mockData = require('../mockData');
+const Menu = require('../models/Menu');
 
 const menuController = {
     getAll: async (req, res) => {
         try {
             const { includeUnavailable } = req.query;
-            let menuItems = mockData.menuItems;
+            const filter = includeUnavailable === 'true' ? {} : { available: true };
 
-            if (includeUnavailable !== 'true') {
-                menuItems = menuItems.filter(item => item.available);
-            }
-
-            // Sort by category then name
-            menuItems.sort((a, b) => {
-                if (a.category !== b.category) {
-                    return a.category.localeCompare(b.category);
-                }
-                return a.name.localeCompare(b.name);
-            });
-
+            const menuItems = await Menu.find(filter).sort({ category: 1, name: 1 });
             res.json(menuItems);
         } catch (error) {
             console.error('Get menu error:', error);
@@ -28,17 +17,15 @@ const menuController = {
     create: async (req, res) => {
         try {
             const { name, description, price, category, imageUrl } = req.body;
-            const newItem = {
-                id: mockData.getNextMenuId(),
+            const menuItem = new Menu({
                 name,
                 description,
                 price,
                 category,
-                image: imageUrl,
-                available: true
-            };
-            mockData.menuItems.push(newItem);
-            res.status(201).json(newItem);
+                image: imageUrl
+            });
+            await menuItem.save();
+            res.status(201).json(menuItem);
         } catch (error) {
             console.error('Create menu error:', error);
             res.status(500).json({ message: 'Server error', error: error.message });
@@ -50,12 +37,11 @@ const menuController = {
             const { id } = req.params;
             const updates = req.body;
 
-            const menuItem = mockData.menuItems.find(item => item.id === parseInt(id));
+            const menuItem = await Menu.findByIdAndUpdate(id, updates, { new: true });
             if (!menuItem) {
                 return res.status(404).json({ message: 'Menu item not found' });
             }
 
-            Object.assign(menuItem, updates);
             res.json(menuItem);
         } catch (error) {
             console.error('Update menu error:', error);
@@ -66,13 +52,12 @@ const menuController = {
     delete: async (req, res) => {
         try {
             const { id } = req.params;
-            const index = mockData.menuItems.findIndex(item => item.id === parseInt(id));
+            const menuItem = await Menu.findByIdAndDelete(id);
 
-            if (index === -1) {
+            if (!menuItem) {
                 return res.status(404).json({ message: 'Menu item not found' });
             }
 
-            mockData.menuItems.splice(index, 1);
             res.json({ message: 'Menu item deleted successfully' });
         } catch (error) {
             console.error('Delete menu error:', error);
