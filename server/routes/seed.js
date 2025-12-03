@@ -176,7 +176,5 @@ const seedMenu = async () => {
     }
 };
 
-// Call seed function
-seedMenu();
-
-module.exports = router;
+// Export seed function
+module.exports = { seedMenu, router };

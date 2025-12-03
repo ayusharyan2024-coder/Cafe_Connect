@@ -24,16 +24,13 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/admin', addItemsRoutes);
 
 // Seed initial data
-require('./routes/seed');
-
-app.get('/', (req, res) => {
-    res.send('CafeConnect API is running');
-});
+const { seedMenu } = require('./routes/seed');
 
 // Database sync and server start
 sequelize.sync()
-    .then(() => {
+    .then(async () => {
         console.log('Database synced successfully');
+        await seedMenu();
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
         });
