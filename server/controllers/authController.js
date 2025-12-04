@@ -3,12 +3,14 @@ const User = require('../models/User');
 
 const authController = {
     signup: async (req, res) => {
+        console.log('Signup request received:', req.body); // DEBUG LOG
         try {
             const { name, email, password, role } = req.body;
 
             // Check if user already exists
             const existingUser = await User.findOne({ email });
             if (existingUser) {
+                console.log('User already exists:', email); // DEBUG LOG
                 return res.status(400).json({ message: 'User already exists' });
             }
 
@@ -19,7 +21,8 @@ const authController = {
                 password,
                 role: role || 'user'
             });
-            await user.save();
+            const savedUser = await user.save();
+            console.log('User saved successfully:', savedUser); // DEBUG LOG
 
             // Generate JWT token
             const token = jwt.sign(
