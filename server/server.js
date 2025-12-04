@@ -30,6 +30,11 @@ const orderRoutes = require('./routes/orders');
 const addItemsRoutes = require('./routes/addItems');
 const restaurantRoutes = require('./routes/restaurants');
 
+// Health check endpoint
+app.get('/', (req, res) => {
+    res.json({ status: 'Server is running', timestamp: new Date().toISOString() });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);

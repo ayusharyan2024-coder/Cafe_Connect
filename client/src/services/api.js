@@ -168,4 +168,5 @@ const api = {
     },
 };
 
+export { API_BASE_URL };
 export default api;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import api, { API_BASE_URL } from '../services/api';
 
 import Logo from '../components/Logo';
 
@@ -40,7 +40,7 @@ const AdminDashboard = () => {
                 ? `?restaurantId=${user.restaurantId}`
                 : '';
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/orders/all${url}`, {
+            const response = await fetch(`${API_BASE_URL}/orders/all${url}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -68,7 +68,7 @@ const AdminDashboard = () => {
                 ? `?includeUnavailable=true&restaurantId=${user.restaurantId}`
                 : '?includeUnavailable=true';
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/menu${url}`);
+            const response = await fetch(`${API_BASE_URL}/menu${url}`);
             const data = await response.json();
 
             // Sort by createdAt to maintain consistent order
