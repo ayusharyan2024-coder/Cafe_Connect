@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import api from '../services/api';
@@ -8,6 +8,7 @@ import burger from '../assets/burger.png';
 import coffee from '../assets/coffee.png';
 import chai from '../assets/chai.png';
 import momos from '../assets/momos.png';
+import { ArrowLeft } from 'lucide-react';
 
 import Logo from '../components/Logo';
 
@@ -24,25 +25,58 @@ const UserDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
+    const [restaurant, setRestaurant] = useState(null);
+    const [searchParams] = useSearchParams();
     const itemsPerPage = 9;
     const { user, logout } = useAuth();
     const { getTotalItems } = useCart();
     const navigate = useNavigate();
 
+    const restaurantId = searchParams.get('restaurant');
+
     useEffect(() => {
+        if (restaurantId) {
+            fetchRestaurant();
+        }
         fetchMenu();
-    }, []);
+    }, [restaurantId]);
+
+    const fetchRestaurant = async () => {
+        try {
+            const data = await api.getRestaurantById(restaurantId);
+            setRestaurant(data);
+        } catch (error) {
+            console.error('Error fetching restaurant:', error);
+        }
+    };
 
     const fetchMenu = async () => {
         setLoading(true);
         try {
+            const url = restaurantId ? `?restaurantId=${restaurantId}` : '';
             const data = await api.getMenu();
+
+            // Filter by restaurant on client side if restaurantId is provided
+            const filteredData = restaurantId
+                ? data.filter(item => item.restaurantId === restaurantId)
+                : data;
+
             // Map imageUrl to local images, or use the URL directly
-            const menuWithImages = data.map(item => ({
-                ...item,
-                id: item._id || item.id, // Handle MongoDB _id
-                image: imageMap[item.image] || item.image || burger, // Handle image field name change from previous schema
-            }));
+            const menuWithImages = filteredData.map(item => {
+                let imageUrl = item.image;
+
+                // If it's a local path reference, map it to imported image
+                if (imageUrl && imageUrl.startsWith('/assets/')) {
+                    imageUrl = imageMap[imageUrl] || burger;
+                }
+                // Otherwise use the URL as-is (external URL)
+
+                return {
+                    ...item,
+                    id: item._id || item.id,
+                    image: imageUrl || burger,
+                };
+            });
             setMenuItems(menuWithImages);
         } catch (error) {
             console.error('Error fetching menu:', error);
@@ -124,6 +158,25 @@ const UserDashboard = () => {
                     </div>
                 </div>
             </nav>
+
+            {/* Restaurant Header */}
+            {restaurant && (
+                <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-6">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <button
+                            onClick={() => navigate('/restaurants')}
+                            className="flex items-center gap-2 text-white/90 hover:text-white mb-3 transition"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            <span>Back to Restaurants</span>
+                        </button>
+                        <h1 className="text-3xl font-bold">{restaurant.name}</h1>
+                        {restaurant.description && (
+                            <p className="text-white/90 mt-2">{restaurant.description}</p>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -30,7 +30,7 @@ const Login = () => {
                 if (response.user.role === 'restaurant') {
                     navigate('/dashboard/admin');
                 } else {
-                    navigate('/dashboard/user');
+                    navigate('/restaurants');
                 }
             } else {
                 setError(response.message || 'Login failed');

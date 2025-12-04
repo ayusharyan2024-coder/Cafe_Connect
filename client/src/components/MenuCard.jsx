@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
+import burger from '../assets/burger.png';
 
 const MenuCard = ({ item }) => {
     const { cartItems, addToCart, updateQuantity, removeFromCart } = useCart();
+    const [imageError, setImageError] = useState(false);
 
     // Check if item is in cart
     const cartItem = cartItems.find(i => i.id === item.id);
@@ -26,6 +28,10 @@ const MenuCard = ({ item }) => {
         }
     };
 
+    const handleImageError = () => {
+        setImageError(true);
+    };
+
     return (
         <motion.div
             whileHover={{ y: -5 }}
@@ -33,9 +39,10 @@ const MenuCard = ({ item }) => {
         >
             <div className="h-40 bg-orange-50 flex items-center justify-center p-4 relative overflow-hidden">
                 <motion.img
-                    src={item.image}
+                    src={imageError ? burger : item.image}
                     alt={item.name}
                     className="h-32 object-contain z-10"
+                    onError={handleImageError}
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     transition={{ type: "spring", stiffness: 300 }}
                 />

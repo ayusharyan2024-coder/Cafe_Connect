@@ -16,11 +16,13 @@ const authRoutes = require('./routes/auth');
 const menuRoutes = require('./routes/menu');
 const orderRoutes = require('./routes/orders');
 const addItemsRoutes = require('./routes/addItems');
+const restaurantRoutes = require('./routes/restaurants');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', addItemsRoutes);
+app.use('/api/restaurants', restaurantRoutes);
 
 // Connect to MongoDB and start server
 connectDB().then(() => {

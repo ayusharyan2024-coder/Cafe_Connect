@@ -3,8 +3,13 @@ const Menu = require('../models/Menu');
 const menuController = {
     getAll: async (req, res) => {
         try {
-            const { includeUnavailable } = req.query;
+            const { includeUnavailable, restaurantId } = req.query;
             const filter = includeUnavailable === 'true' ? {} : { available: true };
+
+            // Filter by restaurant if provided
+            if (restaurantId) {
+                filter.restaurantId = restaurantId;
+            }
 
             const menuItems = await Menu.find(filter).sort({ category: 1, name: 1 });
             res.json(menuItems);
@@ -16,13 +21,22 @@ const menuController = {
 
     create: async (req, res) => {
         try {
-            const { name, description, price, category, imageUrl } = req.body;
+            const { name, description, price, category, image, restaurantId } = req.body;
+
+            // Validate restaurantId
+            if (!restaurantId) {
+                return res.status(400).json({
+                    message: 'Restaurant ID is required. Please complete restaurant setup first.'
+                });
+            }
+
             const menuItem = new Menu({
+                restaurantId,
                 name,
                 description,
                 price,
                 category,
-                image: imageUrl
+                image: image || '/assets/burger.png'
             });
             await menuItem.save();
             res.status(201).json(menuItem);

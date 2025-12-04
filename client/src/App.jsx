@@ -9,6 +9,8 @@ import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import CartPage from './pages/CartPage';
 import UserOrdersPage from './pages/UserOrdersPage';
+import RestaurantList from './pages/RestaurantList';
+import RestaurantSetup from './pages/RestaurantSetup';
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/restaurants" element={<RestaurantList />} />
+            <Route path="/restaurant-setup" element={<RestaurantSetup />} />
             <Route path="/dashboard/user" element={<UserDashboard />} />
             <Route path="/dashboard/admin" element={<AdminDashboard />} />
             <Route path="/cart" element={<CartPage />} />

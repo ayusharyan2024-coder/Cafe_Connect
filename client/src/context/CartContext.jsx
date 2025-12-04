@@ -4,21 +4,49 @@ const CartContext = createContext(null);
 
 export const CartProvider = ({ children }) => {
     const [cartItems, setCartItems] = useState([]);
+    const [cartRestaurantId, setCartRestaurantId] = useState(null);
 
     useEffect(() => {
         // Load cart from localStorage
         const savedCart = localStorage.getItem('cart');
+        const savedRestaurantId = localStorage.getItem('cartRestaurantId');
         if (savedCart) {
             setCartItems(JSON.parse(savedCart));
+        }
+        if (savedRestaurantId) {
+            setCartRestaurantId(savedRestaurantId);
         }
     }, []);
 
     useEffect(() => {
         // Save cart to localStorage whenever it changes
         localStorage.setItem('cart', JSON.stringify(cartItems));
-    }, [cartItems]);
+        if (cartRestaurantId) {
+            localStorage.setItem('cartRestaurantId', cartRestaurantId);
+        } else {
+            localStorage.removeItem('cartRestaurantId');
+        }
+    }, [cartItems, cartRestaurantId]);
 
     const addToCart = (item) => {
+        // Check if item is from a different restaurant
+        if (cartRestaurantId && item.restaurantId && cartRestaurantId !== item.restaurantId) {
+            const confirmSwitch = window.confirm(
+                'Your cart contains items from a different restaurant. Adding this item will clear your current cart. Continue?'
+            );
+            if (!confirmSwitch) {
+                return false;
+            }
+            // Clear cart and switch restaurant
+            setCartItems([]);
+            setCartRestaurantId(item.restaurantId);
+        }
+
+        // Set restaurant ID if this is the first item
+        if (!cartRestaurantId && item.restaurantId) {
+            setCartRestaurantId(item.restaurantId);
+        }
+
         setCartItems(prevItems => {
             const existingItem = prevItems.find(i => i.id === item.id);
             if (existingItem) {
@@ -28,10 +56,18 @@ export const CartProvider = ({ children }) => {
             }
             return [...prevItems, { ...item, quantity: 1 }];
         });
+        return true;
     };
 
     const removeFromCart = (itemId) => {
-        setCartItems(prevItems => prevItems.filter(i => i.id !== itemId));
+        setCartItems(prevItems => {
+            const newItems = prevItems.filter(i => i.id !== itemId);
+            // Clear restaurant ID if cart becomes empty
+            if (newItems.length === 0) {
+                setCartRestaurantId(null);
+            }
+            return newItems;
+        });
     };
 
     const updateQuantity = (itemId, quantity) => {
@@ -46,6 +82,7 @@ export const CartProvider = ({ children }) => {
 
     const clearCart = () => {
         setCartItems([]);
+        setCartRestaurantId(null);
     };
 
     const getTotalPrice = () => {
@@ -60,6 +97,7 @@ export const CartProvider = ({ children }) => {
         <CartContext.Provider
             value={{
                 cartItems,
+                cartRestaurantId,
                 addToCart,
                 removeFromCart,
                 updateQuantity,

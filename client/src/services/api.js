@@ -131,6 +131,41 @@ const api = {
         });
         return response.json();
     },
+
+    // Restaurant endpoints
+    getRestaurants: async () => {
+        const response = await fetchWithTimeout(`${API_BASE_URL}/restaurants`, {}, 30000);
+        return response.json();
+    },
+
+    getRestaurantById: async (id) => {
+        const response = await fetchWithTimeout(`${API_BASE_URL}/restaurants/${id}`, {}, 30000);
+        return response.json();
+    },
+
+    createRestaurant: async (restaurantData, token) => {
+        const response = await fetch(`${API_BASE_URL}/restaurants`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(restaurantData),
+        });
+        return response.json();
+    },
+
+    updateRestaurant: async (id, restaurantData, token) => {
+        const response = await fetch(`${API_BASE_URL}/restaurants/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(restaurantData),
+        });
+        return response.json();
+    },
 };
 
 export default api;

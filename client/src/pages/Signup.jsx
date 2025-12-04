@@ -45,9 +45,9 @@ const Signup = () => {
                 login(response.user, response.token);
                 // Redirect based on role
                 if (response.user.role === 'restaurant') {
-                    navigate('/dashboard/admin');
+                    navigate('/restaurant-setup');
                 } else {
-                    navigate('/dashboard/user');
+                    navigate('/restaurants');
                 }
             } else {
                 setError(response.message || 'Signup failed');

@@ -35,7 +35,18 @@ const AdminDashboard = () => {
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            const data = await api.getAllOrders(token);
+            // Fetch orders for this restaurant only
+            const url = user.restaurantId
+                ? `?restaurantId=${user.restaurantId}`
+                : '';
+
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/orders/all${url}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+            const data = await response.json();
+
             // Map _id to id
             const ordersWithIds = data.map(order => ({
                 ...order,
@@ -52,9 +63,19 @@ const AdminDashboard = () => {
     const fetchMenu = async () => {
         setLoading(true);
         try {
-            const data = await api.getMenu(true); // true = include unavailable
+            // Fetch menu items for this restaurant only
+            const url = user.restaurantId
+                ? `?includeUnavailable=true&restaurantId=${user.restaurantId}`
+                : '?includeUnavailable=true';
+
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001/api'}/menu${url}`);
+            const data = await response.json();
+
+            // Sort by createdAt to maintain consistent order
+            const sortedData = data.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
             // Map _id to id for frontend compatibility
-            const menuWithIds = data.map(item => ({
+            const menuWithIds = sortedData.map(item => ({
                 ...item,
                 id: item._id || item.id
             }));
@@ -68,27 +89,44 @@ const AdminDashboard = () => {
 
     const handleSaveItem = async (e) => {
         e.preventDefault();
+
+        // Check if user has a restaurant
+        if (!user.restaurantId) {
+            alert('Please complete your restaurant setup first before adding menu items.');
+            return;
+        }
+
         const formData = new FormData(e.target);
         const itemData = {
             name: formData.get('name'),
             description: formData.get('description'),
             price: parseFloat(formData.get('price')),
             category: formData.get('category'),
-            imageUrl: formData.get('imageUrl'),
+            image: formData.get('image'),
             available: formData.get('available') === 'on',
+            restaurantId: user.restaurantId,
         };
 
         try {
             if (editingItem) {
-                await api.updateMenuItem(editingItem.id, itemData, token);
+                // Update existing item
+                const response = await api.updateMenuItem(editingItem.id, itemData, token);
+                if (response.message) {
+                    alert(response.message);
+                }
             } else {
-                await api.createMenuItem(itemData, token);
+                // Create new item
+                const response = await api.createMenuItem(itemData, token);
+                if (response.message) {
+                    alert(response.message);
+                }
             }
             setShowModal(false);
+            setEditingItem(null);
             fetchMenu();
         } catch (error) {
-            console.error('Error saving item:', error);
-            alert('Failed to save item');
+            console.error('Error saving menu item:', error);
+            alert('Failed to save menu item. Please try again.');
         }
     };
 
@@ -330,9 +368,13 @@ const AdminDashboard = () => {
                                         <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition group">
                                             <div className="relative h-48 bg-gray-100">
                                                 <img
-                                                    src={item.imageUrl || '/assets/burger.png'}
+                                                    src={item.image || '/assets/burger.png'}
                                                     alt={item.name}
                                                     className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = '/assets/burger.png';
+                                                    }}
                                                 />
                                                 <div className="absolute top-2 right-2">
                                                     <span className={`px-2 py-1 text-xs font-bold rounded-full shadow-sm ${item.available
@@ -495,8 +537,8 @@ const AdminDashboard = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
                                     <input
                                         type="text"
-                                        defaultValue={editingItem?.imageUrl || '/assets/burger.png'}
-                                        name="imageUrl"
+                                        defaultValue={editingItem?.image || '/assets/burger.png'}
+                                        name="image"
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
                                     />
                                     <p className="text-xs text-gray-500 mt-1">Use local assets (e.g., /assets/burger.png) or paste any valid image URL.</p>

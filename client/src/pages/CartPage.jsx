@@ -8,7 +8,7 @@ import api from '../services/api';
 import Logo from '../components/Logo';
 
 const CartPage = () => {
-    const { cartItems, updateQuantity, removeFromCart, getTotalPrice, clearCart } = useCart();
+    const { cartItems, updateQuantity, removeFromCart, getTotalPrice, clearCart, cartRestaurantId } = useCart();
     const { user, token } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = React.useState(false);
@@ -21,6 +21,7 @@ const CartPage = () => {
         try {
             const orderData = {
                 userId: user.id,
+                restaurantId: cartRestaurantId,
                 items: cartItems.map(item => ({
                     menuId: item.id,
                     quantity: item.quantity,

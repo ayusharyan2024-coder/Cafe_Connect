@@ -39,6 +39,7 @@ const authController = {
                     name: user.name,
                     email: user.email,
                     role: user.role,
+                    restaurantId: user.restaurantId,
                 },
             });
         } catch (error) {
@@ -48,17 +49,21 @@ const authController = {
     },
 
     login: async (req, res) => {
+        console.log('Login request received:', req.body); // DEBUG LOG
         try {
             const { email, password } = req.body;
 
             // Find user
             const user = await User.findOne({ email });
+            console.log('User found:', user ? user.email : 'NOT FOUND'); // DEBUG LOG
             if (!user) {
                 return res.status(401).json({ message: 'Invalid credentials' });
             }
 
             // Check password
+            console.log('Comparing password...'); // DEBUG LOG
             const isMatch = await user.comparePassword(password);
+            console.log('Password match:', isMatch); // DEBUG LOG
             if (!isMatch) {
                 return res.status(401).json({ message: 'Invalid credentials' });
             }
@@ -78,6 +83,7 @@ const authController = {
                     name: user.name,
                     email: user.email,
                     role: user.role,
+                    restaurantId: user.restaurantId,
                 },
             });
         } catch (error) {

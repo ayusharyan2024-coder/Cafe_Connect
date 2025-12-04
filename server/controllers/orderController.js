@@ -4,16 +4,22 @@ const Menu = require('../models/Menu');
 const orderController = {
     placeOrder: async (req, res) => {
         try {
-            const { userId, items } = req.body; // items: [{ menuId, quantity }]
+            const { userId, items, restaurantId } = req.body; // items: [{ menuId, quantity }]
 
             // Calculate total and prepare order items
             let totalAmount = 0;
             const orderItems = [];
+            let orderRestaurantId = restaurantId;
 
             for (const item of items) {
                 const menuItem = await Menu.findById(item.menuId);
                 if (!menuItem || !menuItem.available) {
                     return res.status(400).json({ message: `Item ${item.menuId} not available` });
+                }
+
+                // Get restaurantId from first menu item if not provided
+                if (!orderRestaurantId) {
+                    orderRestaurantId = menuItem.restaurantId;
                 }
 
                 const itemTotal = parseFloat(menuItem.price) * item.quantity;
@@ -30,6 +36,7 @@ const orderController = {
             // Create order
             const order = new Order({
                 userId,
+                restaurantId: orderRestaurantId,
                 items: orderItems,
                 totalAmount,
                 status: 'Pending'
@@ -63,9 +70,13 @@ const orderController = {
 
     getAllOrders: async (req, res) => {
         try {
-            const orders = await Order.find()
+            const { restaurantId } = req.query;
+            const filter = restaurantId ? { restaurantId } : {};
+
+            const orders = await Order.find(filter)
                 .populate('userId', 'name email')
                 .populate('items.menuId')
+                .populate('restaurantId', 'name')
                 .sort({ createdAt: -1 });
 
             res.json(orders);

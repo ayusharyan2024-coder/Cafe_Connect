@@ -1,13 +1,18 @@
 const mongoose = require('mongoose');
 
 const menuSchema = new mongoose.Schema({
+    restaurantId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Restaurant',
+        required: true
+    },
     name: {
         type: String,
         required: true
     },
     description: {
         type: String,
-        required: true
+        default: ''
     },
     price: {
         type: Number,
@@ -19,14 +24,12 @@ const menuSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        default: ''
+        default: '/assets/burger.png'
     },
     available: {
         type: Boolean,
         default: true
     }
-}, {
-    timestamps: true
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Menu', menuSchema);
